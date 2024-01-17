@@ -7,9 +7,17 @@
 -include config.mk
 
 ######### JTAG and environment configuration ##########
+# 加上下面这行是判断是否是在wsl下运行
+ifdef WSL_DISTRO_NAME
+OPENOCD           ?= openocd.exe
+else
 OPENOCD           ?= openocd
+endif
+
 OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
-OPENOCD_TARGET    ?= target/stm32f4x_stlink.cfg
+# OPENOCD_TARGET    ?= target/stm32f4x_stlink.cfg
+# windows下载好的openocd是没有stm32f4x_stlink.cfg这个的，需要使用下面的这个
+OPENOCD_TARGET    ?= target/stm32f4x.cfg
 OPENOCD_CMDS      ?=
 CROSS_COMPILE     ?= arm-none-eabi-
 PYTHON2           ?= python
@@ -53,7 +61,7 @@ VPATH += src
 
 ############### Source files configuration ################
 
-PROJ_OBJ = main.o uart.o syslink.o bootpin.o
+PROJ_OBJ = cpuid.o main.o uart.o syslink.o bootpin.o
 
 
 OBJ = $(CRT0) $(ST_OBJ) $(PROJ_OBJ)
