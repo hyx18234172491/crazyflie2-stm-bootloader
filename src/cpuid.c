@@ -23,10 +23,20 @@
  */
 #include "cpuid.h"
 
-unsigned char * cpuidGetId()
+
+// void cpuidSetId(char *array) {
+//     unsigned int cpuid = 0x1;
+//     // 将每个字节存储到数组中
+//     array[0] = (cpuid >> 24) & 0xFF; // 最高字节
+//     array[1] = (cpuid >> 16) & 0xFF; // 第二高字节
+//     array[2] = (cpuid >> 8) & 0xFF;  // 第三高字节
+//     array[3] = (cpuid >> 0) & 0xFF;  // 最低字节
+// }
+unsigned short cpuidGetId()
 {
-  return (unsigned char *)(0x1FFFF7E8);
+  return 1;
 }
+
 
 int cpuIdGetFlashSize()
 {

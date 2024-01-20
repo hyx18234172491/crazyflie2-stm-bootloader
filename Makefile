@@ -61,7 +61,7 @@ VPATH += src
 
 ############### Source files configuration ################
 
-PROJ_OBJ = cpuid.o main.o uart.o syslink.o bootpin.o
+PROJ_OBJ = cpuid.o main.o uart.o syslink.o bootpin.o queue.o
 
 
 OBJ = $(CRT0) $(ST_OBJ) $(PROJ_OBJ)

@@ -35,19 +35,23 @@
 
 /******* GetInfo ******/
 #define CMD_GET_INFO 0x10
+// #define CMD_GET_INFO_ACK 0x10
+#define CMD_GET_INFO_ACK 0x20
 //Parameters ... void
 //Returns:
 typedef struct {
-  short pageSize;
+  short pageSize; // 2 bytes
   short nBuffPages;
   short nFlashPages;
   short flashStart;
-  char  cpuId[CPUID_LEN];
+  // short  cpuId[CPUID_LEN];
+  unsigned short cpuId;
   char version;
 } __attribute__((__packed__)) GetInfoReturns_t;
 
 /****** SetAddress ****/
 #define CMD_SET_ADDRESS 0x11
+
 //Parameters:
 typedef struct {
   char address[5];
@@ -56,6 +60,8 @@ typedef struct {
 
 /******* GetInfo ******/
 #define CMD_GET_MAPPING 0x12
+#define CMD_GET_MAPPING_ACK 0x12
+// #define CMD_GET_MAPPING_ACK 0x22
 //Parameters ... void
 //Returns:
 typedef struct {
@@ -73,6 +79,8 @@ typedef struct {
 
 /****** ReadBuffer ****/
 #define CMD_READ_BUFFER 0x15
+#define CMD_READ_BUFFER_ACK 0x15
+// #define CMD_READ_BUFFER_ACK 0x25
 //Parameters:
 typedef struct {
   unsigned short page;
@@ -82,6 +90,8 @@ typedef struct {
 
 /****** WriteFlash ****/
 #define CMD_WRITE_FLASH 0x18
+// #define CMD_WRITE_FLASH_ACK 0x18  
+#define CMD_WRITE_FLASH_ACK 0x28  
 //Parameters:
 typedef struct {
   unsigned short bufferPage;
@@ -95,6 +105,8 @@ typedef struct {
 } __attribute__((__packed__)) WriteFlashReturns_t;
 
 #define CMD_FLASH_STATUS 0x19
+#define CMD_FLASH_STATUS_ACK 0x19 
+// #define CMD_FLASH_STATUS_ACK 0x29 
 //Parameters ... void
 //Returns:
 typedef struct {
@@ -104,11 +116,23 @@ typedef struct {
 
 /****** ReadBuffer ****/
 #define CMD_READ_FLASH 0x1C
+#define CMD_READ_FLASH_ACK 0x1C  
+// #define CMD_READ_FLASH_ACK 0x2C  
 //Parameters:
 typedef struct {
   unsigned short page;
   unsigned short address;
 } __attribute__((__packed__)) ReadFlashParameters_t;
+
+
+/****** 查看当前是否有缺失 ****/
+#define CMD_QUERY_IS_LOSS 0x31
+#define CMD_QUERY_IS_LOSS_ACK 0x32
+
+typedef struct {
+  unsigned short is_loss;
+} __attribute__((__packed__))QUERY_IS_LOSS_t;
+
 //Returns ... Same as parameters but with data
 
 
