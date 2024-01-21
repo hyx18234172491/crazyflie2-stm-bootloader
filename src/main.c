@@ -162,7 +162,8 @@ static bool bootloaderProcess(CrtpPacket *pk)
   static char buffer[BUFFER_PAGES * PAGE_SIZE];
 
   // 这里用队列来记录缺失情况
-  static bool isFinish[BUFFER_PAGES + 1][PAGE_SIZE / CRTP_PK_SIZE + 2] = {false}; // 记录
+  static bool is_finish[BUFFER_PAGES + 1][PAGE_SIZE / CRTP_PK_SIZE + 2] = {false}; // 记录
+  static bool is_flash_done=false;
   static short last_block_id = -1;
   static short last_page = -1;
   static Queue queue;
@@ -229,7 +230,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
       {
         for (int j = last_block_id + 1; j < cur_block_id; j++) // 丢包的
         {
-          if (!isFinish[cur_page][j]) // 之前没有成功收到的
+          if (!is_finish[cur_page][j]) // 之前没有成功收到的
           {
             QueueElementType tmp = {cur_page, cur_block_id};
             enQueue(&queue, tmp);
@@ -238,14 +239,16 @@ static bool bootloaderProcess(CrtpPacket *pk)
       }
       // 情况二：对于目前收到的，看看是不是之前丢包的，如果是，则从丢列中去除
       QueueElementType q_front = peekQueue(&queue);
-      if (q_front.page == cur_page && cur_block_id == cur_block_id)
+      if (q_front.page == cur_page && q_front.block_id == cur_block_id)
       {
         deQueue(&queue);
       }
       // 标记当前块已经成功收到
-      isFinish[cur_page][cur_block_id] = true;
+      is_finish[cur_page][cur_block_id] = true;
       last_block_id = cur_block_id;
       last_page = cur_page;
+      // 只要是有load_buffer，则说明需要新的flash了，
+      is_flash_done = false;
     }
     else if (pk->data[1] == CMD_QUERY_IS_LOSS) // 判断是否有丢包
     {
@@ -258,7 +261,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
       }
       else
       { // 无丢包，则下一步就要开始烧录了，将记录丢包的变量全部初始化
-        memset(isFinish, 0, sizeof isFinish);
+        memset(is_finish, 0, sizeof is_finish);
         last_block_id = -1;
         initQueue(&queue);
       }
@@ -303,9 +306,11 @@ static bool bootloaderProcess(CrtpPacket *pk)
     else if (pk->data[1] == CMD_WRITE_FLASH)
     {
       // write flash之前，也要将记录丢包的变量全部初始化，防止上一步丢包，导致没有初始化
-      memset(isFinish, 0, sizeof isFinish);
+      memset(is_finish, 0, sizeof is_finish);
       last_block_id = -1;
       initQueue(&queue);
+      
+      
       // 初始化完毕，这里开始烧录
 
       pk->data[1] = CMD_WRITE_FLASH_ACK;
@@ -316,6 +321,16 @@ static bool bootloaderProcess(CrtpPacket *pk)
       uint32_t *bufferToFlash;
       WriteFlashParameters_t *params = (WriteFlashParameters_t *)&pk->data[2];
       WriteFlashReturns_t *returns = (WriteFlashReturns_t *)&pk->data[2];
+      returns->cpuid = cpuidGetId();
+
+      // 如果之前已经write_flash了，不管之前成功还是失败，那么这次直接返回true即可
+      if(is_flash_done==true){
+        returns->done = 1;
+        returns->error = 0;
+        pk->datalen = 2 + sizeof(WriteFlashReturns_t);
+        return true;
+      }
+      is_flash_done = true;
 
       // Test if it is an acceptable write request
       if ((params->flashPage < FLASH_START) || (params->flashPage >= flashPages) ||

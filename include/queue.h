@@ -10,7 +10,7 @@
 
 typedef struct {
     int page;
-    int block
+    int block_id;
 } LossInfoType;
 typedef LossInfoType QueueElementType;  // 队列中元素的类型
 

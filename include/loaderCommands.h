@@ -102,6 +102,7 @@ typedef struct {
 typedef struct {
   char  done;
   unsigned char error;
+  unsigned short cpuid;
 } __attribute__((__packed__)) WriteFlashReturns_t;
 
 #define CMD_FLASH_STATUS 0x19

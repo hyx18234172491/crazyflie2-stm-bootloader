@@ -34,7 +34,7 @@
 // }
 unsigned short cpuidGetId()
 {
-  return 1;
+  return 2;
 }
 
 
