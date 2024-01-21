@@ -321,12 +321,12 @@ static bool bootloaderProcess(CrtpPacket *pk)
       uint32_t *bufferToFlash;
       WriteFlashParameters_t *params = (WriteFlashParameters_t *)&pk->data[2];
       WriteFlashReturns_t *returns = (WriteFlashReturns_t *)&pk->data[2];
-      returns->cpuid = cpuidGetId();
 
       // 如果之前已经write_flash了，不管之前成功还是失败，那么这次直接返回true即可
       if(is_flash_done==true){
         returns->done = 1;
         returns->error = 0;
+        returns->cpuid = cpuidGetId();
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         return true;
       }
@@ -339,6 +339,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
         // Return a failure answer
         returns->done = 0;
         returns->error = 1;
+        returns->cpuid = cpuidGetId();
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         return true;
       }
@@ -381,6 +382,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
         // Everything OK! great, send back an OK packet
         returns->done = 1;
         returns->error = 0;
+        returns->cpuid = cpuidGetId();
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         FLASH_Lock();
         __enable_irq();
@@ -396,6 +398,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
         // TODO: see if it is necessary or wanted to send the reason as well
         returns->done = 0;
         returns->error = error;
+        returns->cpuid = cpuidGetId();
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         return true;
 
