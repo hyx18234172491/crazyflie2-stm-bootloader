@@ -60,8 +60,8 @@ typedef struct {
 
 /******* GetInfo ******/
 #define CMD_GET_MAPPING 0x12
-#define CMD_GET_MAPPING_ACK 0x12
-// #define CMD_GET_MAPPING_ACK 0x22
+// #define CMD_GET_MAPPING_ACK 0x12
+#define CMD_GET_MAPPING_ACK 0x22
 //Parameters ... void
 //Returns:
 typedef struct {

@@ -94,6 +94,7 @@ int main()
   {
     if (syslinkReceive(&slPacket))
     {
+
       if (slPacket.type == SYSLINK_RADIO_RAW)
       {
         memcpy(packet.raw, slPacket.data, slPacket.length);
@@ -104,12 +105,13 @@ int main()
 
         if (bootloaderProcess(&packet))
         {
-          ledRedTime = tick;
-          GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
+            ledRedTime = tick;
+            GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
 
-          memcpy(slPacket.data, packet.raw, packet.datalen + 1);
-          slPacket.length = packet.datalen + 1;
-          syslinkSend(&slPacket);
+            memcpy(slPacket.data, packet.raw, packet.datalen + 1);
+            slPacket.length = packet.datalen + 1;
+            syslinkSend(&slPacket);
+            delayMs(cpuidGetId() * 4);
         }
       }
     }
@@ -163,7 +165,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
   // 这里用队列来记录缺失情况
   static bool is_finish[BUFFER_PAGES + 1][PAGE_SIZE / CRTP_PK_SIZE + 2] = {false}; // 记录
-  static bool is_flash_done=false;
+  static bool is_flash_done = false;
   static short last_block_id = -1;
   static short last_page = -1;
   static Queue queue;
@@ -309,8 +311,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
       memset(is_finish, 0, sizeof is_finish);
       last_block_id = -1;
       initQueue(&queue);
-      
-      
+
       // 初始化完毕，这里开始烧录
 
       pk->data[1] = CMD_WRITE_FLASH_ACK;
@@ -323,7 +324,8 @@ static bool bootloaderProcess(CrtpPacket *pk)
       WriteFlashReturns_t *returns = (WriteFlashReturns_t *)&pk->data[2];
 
       // 如果之前已经write_flash了，不管之前成功还是失败，那么这次直接返回true即可
-      if(is_flash_done==true){
+      if (is_flash_done == true)
+      {
         returns->done = 1;
         returns->error = 0;
         returns->cpuid = cpuidGetId();
