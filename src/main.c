@@ -189,6 +189,13 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
       pk->datalen = 2 + sizeof(GetInfoReturns_t);
 
+      for (size_t i = 0; i < 1000; i++)
+      {
+        GPIO_WriteBit(GPIOC, GPIO_Pin_1, i%2);
+        delayMs(10);
+        /* code */
+      }
+      
       return true;
     }
     else if (pk->data[1] == CMD_GET_MAPPING)
