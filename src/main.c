@@ -110,8 +110,8 @@ int main()
 
             memcpy(slPacket.data, packet.raw, packet.datalen + 1);
             slPacket.length = packet.datalen + 1;
-            syslinkSend(&slPacket);
-            delayMs(cpuidGetId() * 4);
+            // syslinkSend(&slPacket);
+            // delayMs(cpuidGetId() * 4);
         }
       }
     }
