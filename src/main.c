@@ -110,6 +110,11 @@ int main()
 
           memcpy(slPacket.data, packet.raw, packet.datalen + 1);
           slPacket.length = packet.datalen + 1;
+          if (pk->data[1] != CMD_LOAD_BUFFER_SWARM &&
+              pk->data[1] == CMD_WRITE_FLASH_SWARM)
+          {
+            syslinkSend(&slPacket); // 只有不是集群烧录才需要发送
+          }
           // syslinkSend(&slPacket);
           // delayMs(cpuidGetId() * 4);
         }
@@ -219,7 +224,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
        radioSetAddress(addressPk->address);
      }
      else */
-    if (pk->data[1] == CMD_LOAD_BUFFER)
+    if (pk->data[1] == CMD_LOAD_BUFFER_SWARM)
     {
       int i = 0;
       LoadBufferParameters_t *params = (LoadBufferParameters_t *)&pk->data[2];
@@ -259,6 +264,19 @@ static bool bootloaderProcess(CrtpPacket *pk)
       last_page = cur_page;
       // 只要是有load_buffer，则说明需要新的flash了，
       is_flash_done = false;
+    }
+
+    else if (pk->data[1] == CMD_LOAD_BUFFER)
+    {
+      int i = 0;
+      LoadBufferParameters_t *params = (LoadBufferParameters_t *)&pk->data[2];
+      char *data = (char *)&pk->data[2 + sizeof(LoadBufferParameters_t)];
+
+      // Fill the buffer with the given data
+      for (i = 0; i < (pk->datalen - (2 + sizeof(LoadBufferParameters_t))) && (i + (params->page * PAGE_SIZE) + params->address) < (BUFFER_PAGES * PAGE_SIZE); i++)
+      {
+        buffer[(i + (params->page * PAGE_SIZE) + params->address)] = data[i];
+      }
     }
     else if (pk->data[1] == CMD_QUERY_IS_LOSS) // 判断是否有丢包
     {
@@ -313,7 +331,8 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
       return true;
     }
-    else if (pk->data[1] == CMD_WRITE_FLASH)
+
+    else if (pk->data[1] == CMD_WRITE_FLASH_SWARM)
     {
       // write flash之前，也要将记录丢包的变量全部初始化，防止上一步丢包，导致没有初始化
       memset(is_finish, 0, sizeof is_finish);
@@ -385,7 +404,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
           if (FLASH_ProgramWord(flashAddress, bufferToFlash[i]) != FLASH_COMPLETE)
           {
             error = 3;
-            goto failure;
+            goto failure_swarm;
           }
         }
 
@@ -393,6 +412,90 @@ static bool bootloaderProcess(CrtpPacket *pk)
         returns->done = 1;
         returns->error = 0;
         returns->cpuid = cpuidGetId();
+        pk->datalen = 2 + sizeof(WriteFlashReturns_t);
+        FLASH_Lock();
+        __enable_irq();
+        return true;
+
+        goto finally_swarm;
+
+      failure_swarm:
+        FLASH_Lock();
+        __enable_irq();
+
+        // If the write procedure failed, send the error packet
+        // TODO: see if it is necessary or wanted to send the reason as well
+        returns->done = 0;
+        returns->error = error;
+        returns->cpuid = cpuidGetId();
+        pk->datalen = 2 + sizeof(WriteFlashReturns_t);
+        return true;
+
+      finally_swarm:
+        FLASH_Lock();
+        __enable_irq();
+      }
+    }
+
+    else if (pk->data[1] == CMD_WRITE_FLASH)
+    {
+      int i;
+      int j;
+      unsigned int error = 0xFF;
+      int flashAddress;
+      uint32_t *bufferToFlash;
+      WriteFlashParameters_t *params = (WriteFlashParameters_t *)&pk->data[2];
+      WriteFlashReturns_t *returns = (WriteFlashReturns_t *)&pk->data[2];
+
+      // Test if it is an acceptable write request
+      if ((params->flashPage < FLASH_START) || (params->flashPage >= flashPages) ||
+          ((params->flashPage + params->nPages) > flashPages) || (params->bufferPage >= BUFFER_PAGES))
+      {
+        // Return a failure answer
+        returns->done = 0;
+        returns->error = 1;
+        pk->datalen = 2 + sizeof(WriteFlashReturns_t);
+        return true;
+      }
+      // Else, if everything is OK, flash the page(s)
+      else
+      {
+        FLASH_Unlock();
+        FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
+                        FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+
+        __disable_irq();
+        // Erase the page(s)
+        for (i = 0; i < params->nPages; i++)
+        {
+          for (j = 0; j < 12; j++)
+          {
+            if ((uint32_t)(FLASH_BASE + ((uint32_t)params->flashPage * PAGE_SIZE) + (i * PAGE_SIZE)) == sector_address[j])
+            {
+              if (FLASH_EraseSector(j << 3, VoltageRange_3) != FLASH_COMPLETE)
+              {
+                error = 2;
+                goto failure;
+              }
+            }
+          }
+        }
+
+        // Write the data, long per long
+        flashAddress = FLASH_BASE + (params->flashPage * PAGE_SIZE);
+        bufferToFlash = (uint32_t *)(&buffer[0] + (params->bufferPage * PAGE_SIZE));
+        for (i = 0; i < ((params->nPages * PAGE_SIZE) / sizeof(uint32_t)); i++, flashAddress += 4)
+        {
+          if (FLASH_ProgramWord(flashAddress, bufferToFlash[i]) != FLASH_COMPLETE)
+          {
+            error = 3;
+            goto failure;
+          }
+        }
+
+        // Everything OK! great, send back an OK packet
+        returns->done = 1;
+        returns->error = 0;
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         FLASH_Lock();
         __enable_irq();
@@ -408,7 +511,6 @@ static bool bootloaderProcess(CrtpPacket *pk)
         // TODO: see if it is necessary or wanted to send the reason as well
         returns->done = 0;
         returns->error = error;
-        returns->cpuid = cpuidGetId();
         pk->datalen = 2 + sizeof(WriteFlashReturns_t);
         return true;
 
