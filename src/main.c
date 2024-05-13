@@ -105,13 +105,13 @@ int main()
 
         if (bootloaderProcess(&packet))
         {
-            ledRedTime = tick;
-            GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
+          ledRedTime = tick;
+          GPIO_WriteBit(GPIOC, GPIO_Pin_0, 0);
 
-            memcpy(slPacket.data, packet.raw, packet.datalen + 1);
-            slPacket.length = packet.datalen + 1;
-            // syslinkSend(&slPacket);
-            // delayMs(cpuidGetId() * 4);
+          memcpy(slPacket.data, packet.raw, packet.datalen + 1);
+          slPacket.length = packet.datalen + 1;
+          // syslinkSend(&slPacket);
+          // delayMs(cpuidGetId() * 4);
         }
       }
     }
@@ -158,16 +158,17 @@ static const uint32_t sector_address[] = {
     [11] = 0x080E0000,
 };
 
+// 这里用队列来记录缺失情况
+static bool is_finish[BUFFER_PAGES + 1][PAGE_SIZE / CRTP_PK_SIZE + 2] = {false}; // 记录
+static bool is_flash_done = false;
+static short last_block_id = -1;
+static short last_page = -1;
+
 static bool bootloaderProcess(CrtpPacket *pk)
 {
 
   static char buffer[BUFFER_PAGES * PAGE_SIZE];
 
-  // 这里用队列来记录缺失情况
-  static bool is_finish[BUFFER_PAGES + 1][PAGE_SIZE / CRTP_PK_SIZE + 2] = {false}; // 记录
-  static bool is_flash_done = false;
-  static short last_block_id = -1;
-  static short last_page = -1;
   static Queue queue;
   initQueue(&queue);
 
@@ -191,11 +192,11 @@ static bool bootloaderProcess(CrtpPacket *pk)
 
       for (size_t i = 0; i < 1000; i++)
       {
-        GPIO_WriteBit(GPIOC, GPIO_Pin_1, i%2);
+        GPIO_WriteBit(GPIOC, GPIO_Pin_1, i % 2);
         delayMs(10);
         /* code */
       }
-      
+
       return true;
     }
     else if (pk->data[1] == CMD_GET_MAPPING)
