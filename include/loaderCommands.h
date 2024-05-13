@@ -70,6 +70,7 @@ typedef struct {
 
 /****** LoadBuffer ****/
 #define CMD_LOAD_BUFFER 0x14
+#define CMD_LOAD_BUFFER_SWARM 0x51
 //Parameters:
 typedef struct {
   unsigned short page;
@@ -90,6 +91,7 @@ typedef struct {
 
 /****** WriteFlash ****/
 #define CMD_WRITE_FLASH 0x18
+#define CMD_WRITE_FLASH_SWARM 0x52
 // #define CMD_WRITE_FLASH_ACK 0x18  
 #define CMD_WRITE_FLASH_ACK 0x28  
 //Parameters:
