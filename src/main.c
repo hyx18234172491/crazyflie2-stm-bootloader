@@ -111,7 +111,7 @@ int main()
           memcpy(slPacket.data, packet.raw, packet.datalen + 1);
           slPacket.length = packet.datalen + 1;
           if (packet.data[1] != CMD_LOAD_BUFFER_SWARM &&
-              packet.data[1] == CMD_WRITE_FLASH_SWARM)
+              packet.data[1] != CMD_WRITE_FLASH_SWARM)
           {
             syslinkSend(&slPacket); // 只有不是集群烧录才需要发送
           }
