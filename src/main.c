@@ -190,7 +190,7 @@ static bool bootloaderProcess(CrtpPacket *pk)
       info->nFlashPages = flashPages;
       info->flashStart = FLASH_START;
       // cpuidSetId(info->cpuId);
-      info->cpuId = cpuidGetId();
+      // info->cpuId = cpuidGetId();
       info->version = PROTOCOL_VERSION;
 
       pk->datalen = 2 + sizeof(GetInfoReturns_t);

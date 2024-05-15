@@ -36,7 +36,7 @@
 /******* GetInfo ******/
 #define CMD_GET_INFO 0x10
 // #define CMD_GET_INFO_ACK 0x10
-#define CMD_GET_INFO_ACK 0x20
+#define CMD_GET_INFO_ACK 0x10
 //Parameters ... void
 //Returns:
 typedef struct {
@@ -44,8 +44,8 @@ typedef struct {
   short nBuffPages;
   short nFlashPages;
   short flashStart;
-  // short  cpuId[CPUID_LEN];
-  unsigned short cpuId;
+  short  cpuId[CPUID_LEN];
+  // unsigned short cpuId;
   char version;
 } __attribute__((__packed__)) GetInfoReturns_t;
 
@@ -61,7 +61,7 @@ typedef struct {
 /******* GetInfo ******/
 #define CMD_GET_MAPPING 0x12
 // #define CMD_GET_MAPPING_ACK 0x12
-#define CMD_GET_MAPPING_ACK 0x22
+#define CMD_GET_MAPPING_ACK 0x12
 //Parameters ... void
 //Returns:
 typedef struct {
@@ -93,7 +93,7 @@ typedef struct {
 #define CMD_WRITE_FLASH 0x18
 #define CMD_WRITE_FLASH_SWARM 0x52
 // #define CMD_WRITE_FLASH_ACK 0x18  
-#define CMD_WRITE_FLASH_ACK 0x28  
+#define CMD_WRITE_FLASH_ACK 0x18  
 //Parameters:
 typedef struct {
   unsigned short bufferPage;
